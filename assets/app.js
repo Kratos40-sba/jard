@@ -15,9 +15,10 @@ function initCharts() {
         data: {
             labels: velocityLabels,
             datasets: [{
-                label: 'Scans par seconde',
+                label: 'Scans/s',
                 data: velocityData,
                 borderColor: '#10b981',
+                borderWidth: 3,
                 tension: 0.4,
                 fill: true,
                 backgroundColor: 'rgba(16, 185, 129, 0.1)'
@@ -26,8 +27,11 @@ function initCharts() {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            scales: { y: { beginAtZero: true } },
-            plugins: { title: { display: true, text: 'Vitesse de Scan' } }
+            scales: { 
+                y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } },
+                x: { grid: { display: false } }
+            },
+            plugins: { title: { display: true, text: 'VITESSE DE SCAN', color: '#94a3b8' }, legend: { display: false } }
         }
     });
 
@@ -37,15 +41,20 @@ function initCharts() {
         data: {
             labels: [],
             datasets: [{
-                label: 'Scans par Opérateur',
+                label: 'Scans',
                 data: [],
-                backgroundColor: '#3b82f6'
+                backgroundColor: '#3b82f6',
+                borderRadius: 8
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: { title: { display: true, text: 'Performance des Opérateurs' } }
+            scales: { 
+                y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } },
+                x: { grid: { display: false } }
+            },
+            plugins: { title: { display: true, text: 'PERFORMANCE OPÉRATEURS', color: '#94a3b8' }, legend: { display: false } }
         }
     });
 }
