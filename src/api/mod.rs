@@ -216,11 +216,10 @@ async fn receive_scan(
             }
 
             if found {
+                let _ = state.db.save_order(&order);
                 return (
                     StatusCode::OK,
-                    Json(
-                        serde_json::json!({ "status": "ok", "message": format!("Correct: {}", item_name) }),
-                    ),
+                    Json(serde_json::json!({ "status": "ok", "message": format!("Correct: {}", item_name) })),
                 );
             } else if over_packed {
                 return (
@@ -238,9 +237,7 @@ async fn receive_scan(
 
     // 2. Simple Inventory Fallback (Legacy Jard)
     let is_unknown = !state.product_lookup.contains_key(&payload.barcode);
-    state
-        .scans
-        .entry(payload.barcode.clone())
+    state.scans.entry(payload.barcode.clone())
         .and_modify(|r| {
             r.count += 1;
             r.last_worker = payload.worker.clone();
@@ -249,12 +246,12 @@ async fn receive_scan(
             count: 1,
             last_worker: payload.worker,
             is_anomaly: is_unknown,
-            anomaly_reason: if is_unknown {
-                Some("Inconnu".to_string())
-            } else {
-                None
-            },
+            anomaly_reason: if is_unknown { Some("Inconnu".to_string()) } else { None },
         });
+
+    if let Some(record) = state.scans.get(&payload.barcode) {
+        let _ = state.db.save_scan(&payload.barcode, &record);
+    }
 
     (
         StatusCode::OK,
@@ -269,19 +266,16 @@ async fn create_order(
     let order = Order {
         id: payload.id.clone(),
         status: "Active".to_string(),
-        items: payload
-            .items
-            .into_iter()
-            .map(|(barcode, name, qty)| OrderItem {
-                barcode,
-                name,
-                target_qty: qty,
-                packed_qty: 0,
-            })
-            .collect(),
+        items: payload.items.iter().map(|(b, n, q)| OrderItem {
+            barcode: b.clone(),
+            name: n.clone(),
+            target_qty: *q,
+            packed_qty: 0,
+        }).collect(),
     };
+    let _ = state.db.save_order(&order);
     state.orders.insert(payload.id, order);
-    StatusCode::CREATED
+    StatusCode::OK
 }
 
 async fn list_orders(State(state): State<SharedState>) -> Json<Vec<Order>> {

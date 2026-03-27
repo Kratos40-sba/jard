@@ -5,10 +5,7 @@ use std::sync::Arc;
 use tracing::{info, Level};
 use tracing_subscriber::FmtSubscriber;
 
-pub mod api;
-mod assets;
 pub mod common;
-pub mod infra;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -47,7 +44,11 @@ async fn main() -> anyhow::Result<()> {
     info!("mDNS: Registered service as raf.local");
 
     // 3. Initialize Database
-    let db = Arc::new(infra::db::Database::new("raf.db").expect("Failed to initialize database"));
+    let db = Arc::new(raf::infra::db::Database::new("raf.db").expect("Failed to initialize database"));
+
+    // 4. Generate Security Token
+    use rand::distributions::{Alphanumeric, DistString};
+    let token = Alphanumeric.sample_string(&mut rand::thread_rng(), 12);
     
     // Load existing data
     let scans_map = DashMap::new();

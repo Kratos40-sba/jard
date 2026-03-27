@@ -42,7 +42,7 @@ impl Database {
             [],
         )?;
 
-        Ok(Self { conn: Arc::new(Mutex<Connection>::new(conn)) })
+        Ok(Self { conn: Arc::new(Mutex::<Connection>::new(conn)) })
     }
 
     pub fn save_order(&self, order: &Order) -> Result<()> {
