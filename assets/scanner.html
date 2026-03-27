@@ -32,14 +32,31 @@
         const workerInput = document.getElementById('worker-name');
         const resultDisplay = document.getElementById('scanned-result');
 
-        if (!token) {
-            document.body.innerHTML = "<h1>Erreur</h1><p>Token de sécurité manquant. Veuillez rescanner le QR code.</p>";
+        // Play a short beep sound using Web Audio API
+        function playBeep() {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // A5 note
+            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + 0.1);
         }
 
         function onScanSuccess(decodedText) {
             const worker = workerInput.value || "Anonyme";
             resultDisplay.innerText = decodedText;
             
+            // Provide immediate feedback
+            playBeep();
+            if (navigator.vibrate) navigator.vibrate(200);
+
             fetch('/api/scan', {
                 method: 'POST',
                 headers: { 
