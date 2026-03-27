@@ -2,6 +2,84 @@
 const urlParams = new URLSearchParams(window.location.search);
 const token = urlParams.get('token');
 
+// Chart initialization
+let velocityChart, workerChart;
+const velocityData = [];
+const velocityLabels = [];
+let lastTotalScans = 0;
+
+function initCharts() {
+    const ctxVelocity = document.getElementById('velocity-chart').getContext('2d');
+    velocityChart = new Chart(ctxVelocity, {
+        type: 'line',
+        data: {
+            labels: velocityLabels,
+            datasets: [{
+                label: 'Scans par seconde',
+                data: velocityData,
+                borderColor: '#10b981',
+                tension: 0.4,
+                fill: true,
+                backgroundColor: 'rgba(16, 185, 129, 0.1)'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: { y: { beginAtZero: true } },
+            plugins: { title: { display: true, text: 'Vitesse de Scan' } }
+        }
+    });
+
+    const ctxWorker = document.getElementById('worker-chart').getContext('2d');
+    workerChart = new Chart(ctxWorker, {
+        type: 'bar',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Scans par Opérateur',
+                data: [],
+                backgroundColor: '#3b82f6'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { title: { display: true, text: 'Performance des Opérateurs' } }
+        }
+    });
+}
+
+function updateAnalytics(data) {
+    // 1. Update Worker Chart
+    const workerCounts = {};
+    let totalCurrentScans = 0;
+
+    Object.values(data).forEach(info => {
+        const worker = info.last_worker || "Inconnu";
+        workerCounts[worker] = (workerCounts[worker] || 0) + info.count;
+        totalCurrentScans += info.count;
+    });
+
+    workerChart.data.labels = Object.keys(workerCounts);
+    workerChart.data.datasets[0].data = Object.values(workerCounts);
+    workerChart.update();
+
+    // 2. Update Velocity Chart
+    const delta = totalCurrentScans - lastTotalScans;
+    lastTotalScans = totalCurrentScans;
+
+    const now = new Date().toLocaleTimeString();
+    velocityData.push(delta);
+    velocityLabels.push(now);
+
+    if (velocityData.length > 20) {
+        velocityData.shift();
+        velocityLabels.shift();
+    }
+    velocityChart.update();
+}
+
 async function updateList() {
     if (!token) return;
     const response = await fetch('/api/scans', {
@@ -12,31 +90,26 @@ async function updateList() {
         return;
     }
     const data = await response.json();
+    
+    // Update Analytics
+    if (!velocityChart) initCharts();
+    updateAnalytics(data);
+
     const tbody = document.getElementById('scan-tbody');
     tbody.innerHTML = '';
 
     Object.entries(data).forEach(([barcode, info]) => {
         const tr = document.createElement('tr');
-        
-        // Barcode
         const tdBarcode = document.createElement('td');
         tdBarcode.textContent = barcode;
-        
-        // Product Name (NEW)
         const tdProductName = document.createElement('td');
         tdProductName.textContent = info.product_name || "Inconnu";
-        
-        // Count
         const tdCount = document.createElement('td');
         const strongCount = document.createElement('strong');
         strongCount.textContent = info.count;
         tdCount.appendChild(strongCount);
-        
-        // Worker
         const tdWorker = document.createElement('td');
         tdWorker.textContent = info.last_worker;
-        
-        // Actions
         const tdActions = document.createElement('td');
         const btnDelete = document.createElement('button');
         btnDelete.textContent = "Supprimer";
@@ -48,12 +121,11 @@ async function updateList() {
         tr.appendChild(tdCount);
         tr.appendChild(tdWorker);
         tr.appendChild(tdActions);
-        
         tbody.appendChild(tr);
     });
 }
 
-// ... rest of functions ...
+// ... rest of same functions (getIP, renderQRCode, deleteScan, CSV Import) ...
 async function getIP() {
     if (!token) return;
     const response = await fetch('/api/ip', {
@@ -84,7 +156,6 @@ async function deleteScan(barcode) {
     updateList();
 }
 
-// CSV Import Logic
 document.getElementById('import-csv-btn').onclick = () => {
     document.getElementById('csv-file-input').click();
 };
@@ -98,29 +169,17 @@ document.getElementById('csv-file-input').onchange = (e) => {
         const text = event.target.result;
         const lines = text.split('\n');
         const products = [];
-
-        for (let i = 1; i < lines.length; i++) { // Skip header
+        for (let i = 1; i < lines.length; i++) {
             const [barcode, name] = lines[i].split(',').map(s => s.trim());
-            if (barcode && name) {
-                products.push({ barcode, name });
-            }
+            if (barcode && name) products.push({ barcode, name });
         }
-
         if (products.length > 0) {
             const resp = await fetch('/api/products', {
                 method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'X-Jard-Token': token
-                },
+                headers: { 'Content-Type': 'application/json', 'X-Jard-Token': token },
                 body: JSON.stringify(products)
             });
-            if (resp.ok) {
-                alert(`${products.length} produits importés !`);
-                updateList();
-            } else {
-                alert("Erreur lors de l'import : " + resp.status);
-            }
+            if (resp.ok) { alert(`${products.length} produits importés !`); updateList(); }
         }
     };
     reader.readAsText(file);
@@ -130,7 +189,6 @@ document.getElementById('export-btn').onclick = async () => {
     window.location.href = `/api/export?token=${token}`;
 };
 
-// Initial calls
 if (token) {
     getIP();
     renderQRCode();

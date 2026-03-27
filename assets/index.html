@@ -14,10 +14,21 @@
         </header>
 
         <main>
-            <div class="pairing-card">
-                <h3>Connectez votre téléphone</h3>
-                <div id="qrcode-container"></div>
-                <p>Scannez ce QR code avec votre smartphone pour commencer le scan des codes-barres.</p>
+            <div class="top-section">
+                <div class="pairing-card">
+                    <h3>Connectez votre téléphone</h3>
+                    <div id="qrcode-container"></div>
+                    <p>Scannez ce QR code avec votre smartphone pour commencer le scan des codes-barres.</p>
+                </div>
+
+                <div class="analytics-card">
+                    <div class="chart-container">
+                        <canvas id="velocity-chart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="worker-chart"></canvas>
+                    </div>
+                </div>
             </div>
 
             <div class="scan-list-card">
@@ -48,6 +59,7 @@
             </div>
         </main>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="/assets/app.js"></script>
 </body>
