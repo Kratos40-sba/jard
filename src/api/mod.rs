@@ -15,6 +15,8 @@ use std::sync::Arc;
 pub struct ScanRecord {
     pub count: u32,
     pub last_worker: String,
+    pub is_anomaly: bool,
+    pub anomaly_reason: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -179,17 +181,27 @@ async fn receive_scan(
         return StatusCode::BAD_REQUEST;
     }
 
-    // 2. Process Scan
+    // 2. Anomaly Detection Logic
+    let is_unknown = !state.product_lookup.contains_key(&payload.barcode);
+    
+    // 3. Process Scan
     state
         .scans
         .entry(payload.barcode)
         .and_modify(|r| {
             r.count += 1;
             r.last_worker = payload.worker.clone();
+            // Flag quantity spikes
+            if r.count > 50 {
+                r.is_anomaly = true;
+                r.anomaly_reason = Some("Volume Suspect".to_string());
+            }
         })
         .or_insert(ScanRecord {
             count: 1,
             last_worker: payload.worker,
+            is_anomaly: is_unknown,
+            anomaly_reason: if is_unknown { Some("Inconnu".to_string()) } else { None },
         });
     StatusCode::OK
 }
@@ -227,7 +239,9 @@ async fn list_scans(State(state): State<SharedState>) -> Json<serde_json::Value>
             serde_json::json!({
                 "count": record.count,
                 "last_worker": record.last_worker,
-                "product_name": product_name
+                "product_name": product_name,
+                "is_anomaly": record.is_anomaly,
+                "anomaly_reason": record.anomaly_reason
             }),
         );
     }

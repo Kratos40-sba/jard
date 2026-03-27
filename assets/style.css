@@ -177,8 +177,16 @@ td:last-child { border-radius: 0 12px 12px 0; }
     font-weight: 700;
 }
 .pill-count { background: var(--primary-light); color: var(--primary); box-shadow: 0 2px 5px rgba(99, 102, 241, 0.1); }
+.pill-anomaly { background: #fff1f2; color: #f43f5e; border: 1px solid #fecdd3; animation: pulse 2s infinite; }
 
-.btn {
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.row-anomaly { background: rgba(244, 63, 94, 0.05) !important; }
+.row-anomaly td { border-bottom-color: #fecdd3; }
     border: none;
     padding: 0.7rem 1.4rem;
     border-radius: 12px;

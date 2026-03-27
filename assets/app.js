@@ -113,13 +113,23 @@ async function updateList() {
     const tbody = document.getElementById('scan-tbody');
     tbody.innerHTML = '';
 
+    let anomalyCount = 0;
+
     Object.entries(data).forEach(([barcode, info]) => {
         const tr = document.createElement('tr');
+        if (info.is_anomaly) {
+            tr.className = "row-anomaly";
+            anomalyCount++;
+        }
+
         const tdBarcode = document.createElement('td');
         tdBarcode.innerHTML = `<code style="background:#f3f4f6;padding:2px 4px;border-radius:4px">${barcode}</code>`;
+        
         const tdProductName = document.createElement('td');
-        tdProductName.textContent = info.product_name || "Inconnu";
+        const nameText = info.product_name || "Inconnu";
+        tdProductName.innerHTML = info.is_anomaly ? `<span title="${info.anomaly_reason}">⚠️ ${nameText}</span>` : nameText;
         tdProductName.style.fontWeight = "600";
+        if (info.is_anomaly) tdProductName.style.color = "var(--danger)";
         
         const tdCount = document.createElement('td');
         const pillCount = document.createElement('span');
@@ -134,7 +144,7 @@ async function updateList() {
         const tdActions = document.createElement('td');
         const btnDelete = document.createElement('button');
         btnDelete.textContent = "Supprimer";
-        btnDelete.className = "btn btn-danger btn-sm"; // btn-sm is a hint for me to style it small
+        btnDelete.className = "btn btn-danger btn-sm"; 
         btnDelete.style.fontSize = "0.75rem";
         btnDelete.onclick = () => deleteScan(barcode);
         tdActions.appendChild(btnDelete);
@@ -146,6 +156,15 @@ async function updateList() {
         tr.appendChild(tdActions);
         tbody.appendChild(tr);
     });
+
+    // Update Alert Center
+    const alertCenter = document.getElementById('alert-center');
+    if (anomalyCount > 0) {
+        alertCenter.style.display = 'flex';
+        document.getElementById('alert-count').innerText = anomalyCount;
+    } else {
+        alertCenter.style.display = 'none';
+    }
 }
 
 // ... rest of same functions (getIP, renderQRCode, deleteScan, CSV Import) ...
