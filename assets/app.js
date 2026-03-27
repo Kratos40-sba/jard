@@ -17,21 +17,22 @@ function initCharts() {
             datasets: [{
                 label: 'Scans/s',
                 data: velocityData,
-                borderColor: '#10b981',
-                borderWidth: 3,
+                borderColor: '#4f46e5',
+                borderWidth: 2,
+                pointRadius: 0,
                 tension: 0.4,
                 fill: true,
-                backgroundColor: 'rgba(16, 185, 129, 0.1)'
+                backgroundColor: 'rgba(79, 70, 229, 0.05)'
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             scales: { 
-                y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } },
-                x: { grid: { display: false } }
+                y: { beginAtZero: true, grid: { color: '#f3f4f6' }, ticks: { font: { size: 10 } } },
+                x: { grid: { display: false }, ticks: { display: false } }
             },
-            plugins: { title: { display: true, text: 'VITESSE DE SCAN', color: '#94a3b8' }, legend: { display: false } }
+            plugins: { title: { display: true, text: 'VITESSE DE SCAN', align: 'start', color: '#6b7280', font: { weight: '800', size: 11 } }, legend: { display: false } }
         }
     });
 
@@ -43,18 +44,19 @@ function initCharts() {
             datasets: [{
                 label: 'Scans',
                 data: [],
-                backgroundColor: '#3b82f6',
-                borderRadius: 8
+                backgroundColor: '#111827',
+                borderRadius: 4,
+                barThickness: 20
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             scales: { 
-                y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } },
+                y: { beginAtZero: true, grid: { color: '#f3f4f6' }, ticks: { font: { size: 10 } } },
                 x: { grid: { display: false } }
             },
-            plugins: { title: { display: true, text: 'PERFORMANCE OPÉRATEURS', color: '#94a3b8' }, legend: { display: false } }
+            plugins: { title: { display: true, text: 'PERFORMANCE', align: 'start', color: '#6b7280', font: { weight: '800', size: 11 } }, legend: { display: false } }
         }
     });
 }
@@ -114,19 +116,26 @@ async function updateList() {
     Object.entries(data).forEach(([barcode, info]) => {
         const tr = document.createElement('tr');
         const tdBarcode = document.createElement('td');
-        tdBarcode.textContent = barcode;
+        tdBarcode.innerHTML = `<code style="background:#f3f4f6;padding:2px 4px;border-radius:4px">${barcode}</code>`;
         const tdProductName = document.createElement('td');
         tdProductName.textContent = info.product_name || "Inconnu";
+        tdProductName.style.fontWeight = "600";
+        
         const tdCount = document.createElement('td');
-        const strongCount = document.createElement('strong');
-        strongCount.textContent = info.count;
-        tdCount.appendChild(strongCount);
+        const pillCount = document.createElement('span');
+        pillCount.className = "pill pill-count";
+        pillCount.textContent = info.count;
+        tdCount.appendChild(pillCount);
+        
         const tdWorker = document.createElement('td');
         tdWorker.textContent = info.last_worker;
+        tdWorker.style.color = "#6b7280";
+        
         const tdActions = document.createElement('td');
         const btnDelete = document.createElement('button');
         btnDelete.textContent = "Supprimer";
-        btnDelete.className = "btn-danger";
+        btnDelete.className = "btn btn-danger btn-sm"; // btn-sm is a hint for me to style it small
+        btnDelete.style.fontSize = "0.75rem";
         btnDelete.onclick = () => deleteScan(barcode);
         tdActions.appendChild(btnDelete);
 
