@@ -75,6 +75,10 @@ function updateAnalytics(data) {
     workerChart.update();
 
     // 2. Update Velocity Chart
+    if (lastTotalScans === 0 && totalCurrentScans > 0) {
+        lastTotalScans = totalCurrentScans;
+        return; // Skip the first data point to avoid a massive spike
+    }
     const delta = totalCurrentScans - lastTotalScans;
     lastTotalScans = totalCurrentScans;
 
