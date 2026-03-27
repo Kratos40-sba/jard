@@ -2,15 +2,20 @@ use axum::{
     body::Body,
     http::{Request, StatusCode},
 };
-use tower::ServiceExt; // for `oneshot`
 use jard::api;
+use tower::ServiceExt; // for `oneshot`
 
 #[tokio::test]
 async fn test_health_check() {
     let app = api::router();
 
     let response = app
-        .oneshot(Request::builder().uri("/health").body(Body::empty()).unwrap())
+        .oneshot(
+            Request::builder()
+                .uri("/health")
+                .body(Body::empty())
+                .unwrap(),
+        )
         .await
         .unwrap();
 
@@ -28,8 +33,8 @@ async fn test_get_secret_success() {
                 .body(Body::empty())
                 .unwrap(),
         )
-    .await
-    .unwrap();
+        .await
+        .unwrap();
 
     assert_eq!(response.status(), StatusCode::OK);
 }
@@ -45,8 +50,8 @@ async fn test_get_secret_not_found() {
                 .body(Body::empty())
                 .unwrap(),
         )
-    .await
-    .unwrap();
+        .await
+        .unwrap();
 
     assert_eq!(response.status(), StatusCode::NOT_FOUND);
 }
