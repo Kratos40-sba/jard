@@ -2,64 +2,102 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jard Scanner</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Jard Scanner — Mobile Luxe</title>
     <link rel="stylesheet" href="/assets/style.css">
     <script src="https://unpkg.com/html5-qrcode"></script>
 </head>
 <body class="mobile-body">
-    <div class="mobile-container">
-        <header>
-            <h1>Scanner Jard</h1>
-            <input type="text" id="worker-name" placeholder="Votre nom (ex: Phone 1)">
+    <!-- Camera Background -->
+    <div id="reader"></div>
+
+    <!-- Screen Flash Overlay -->
+    <div id="flash-overlay"></div>
+
+    <!-- Focus Region Highlight -->
+    <div class="scan-region-highlight"></div>
+
+    <!-- UI Overlay -->
+    <div class="scanner-overlay">
+        <header class="mobile-header">
+            <div class="glass-card">
+                <input type="text" id="worker-name" placeholder="Votre Nom d'Opérateur">
+            </div>
         </header>
 
-        <div id="reader"></div>
-
-        <div class="last-scan">
-            <h3>Dernier Scan:</h3>
-            <p id="scanned-result">Prêt à scanner...</p>
+        <div id="scan-result" class="glass-card scan-result-card">
+            <span class="product-label">DERNIER SCAN</span>
+            <div id="scanned-result" class="barcode-text">---</div>
+            <div id="product-name" style="font-size: 0.8rem; font-weight: 700; color: #10b981;">Prêt à scanner</div>
         </div>
 
-        <div class="manual-input">
-            <input type="text" id="barcode-input" placeholder="Saisie manuelle...">
-            <button id="send-manual" class="btn-secondary">Envoyer</button>
+        <div class="glass-card">
+            <div style="font-size: 0.7rem; font-weight: 800; margin-bottom: 0.8rem; opacity: 0.6;">HISTORIQUE RÉCENT</div>
+            <div id="history-tray">
+                <!-- History items injected here -->
+            </div>
+            
+            <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
+                <input type="text" id="barcode-input" placeholder="Saisie manuelle..." style="flex: 1; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 12px; padding: 0.6rem; color: white; outline: none;">
+                <button id="send-manual" class="btn btn-primary" style="padding: 0.6rem 1rem; border-radius: 12px;">Go</button>
+            </div>
         </div>
     </div>
+
     <script>
         const urlParams = new URLSearchParams(window.location.search);
         const token = urlParams.get('token');
         const workerInput = document.getElementById('worker-name');
         const resultDisplay = document.getElementById('scanned-result');
+        const productDisplay = document.getElementById('product-name');
+        const historyTray = document.getElementById('history-tray');
+        const flashOverlay = document.getElementById('flash-overlay');
 
         if (!token) {
-            document.body.innerHTML = "<h1>Erreur</h1><p>Token de sécurité manquant. Veuillez rescanner le QR code.</p>";
+            document.body.innerHTML = "<div class='glass-card' style='margin: 2rem;'><h1>Erreur</h1><p>Token manquant. Veuillez rescanner le QR code.</p></div>";
         }
 
-        // Play a short beep sound using Web Audio API
+        function flash() {
+            flashOverlay.classList.add('flash-active');
+            setTimeout(() => flashOverlay.classList.remove('flash-active'), 100);
+        }
+
         function playBeep() {
             const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             const oscillator = audioCtx.createOscillator();
             const gainNode = audioCtx.createGain();
-
             oscillator.connect(gainNode);
             gainNode.connect(audioCtx.destination);
-
             oscillator.type = 'sine';
-            oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // A5 note
-            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
-
+            oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
+            gainNode.gain.setValueAtTime(0.05, audioCtx.currentTime);
             oscillator.start();
-            oscillator.stop(audioCtx.currentTime + 0.1);
+            oscillator.stop(audioCtx.currentTime + 0.08);
+        }
+
+        function addToHistory(barcode) {
+            const item = document.createElement('div');
+            item.className = 'history-item';
+            item.innerHTML = `<span>${barcode}</span><span style="opacity:0.5">${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>`;
+            historyTray.prepend(item);
+            if (historyTray.children.length > 3) historyTray.lastElementChild.remove();
         }
 
         function onScanSuccess(decodedText) {
-            const worker = workerInput.value || "Anonyme";
+            if (decodedText === resultDisplay.innerText) return; // Debounce
+            
+            const worker = workerInput.value || "Mobile";
             resultDisplay.innerText = decodedText;
             
-            // Provide immediate feedback
+            // UI Feedback
+            flash();
             playBeep();
-            if (navigator.vibrate) navigator.vibrate(200);
+            if (navigator.vibrate) navigator.vibrate([100]);
+            addToHistory(decodedText);
+            
+            const resultCard = document.getElementById('scan-result');
+            resultCard.classList.add('new-scan');
+            setTimeout(() => resultCard.classList.remove('new-scan'), 300);
 
             fetch('/api/scan', {
                 method: 'POST',
@@ -69,14 +107,21 @@
                 },
                 body: JSON.stringify({ barcode: decodedText, worker: worker })
             }).then(response => {
-                if (response.status === 401) alert("Session expirée ou Token invalide");
-                else if (!response.ok) alert("Erreur d'envoi: " + response.status);
+                if (response.status === 401) productDisplay.innerText = "ACCÈS REFUSÉ";
+                else if (response.ok) productDisplay.innerText = "TRANSMISSION RÉUSSIE";
+                else productDisplay.innerText = "ERREUR RÉSEAU";
             });
         }
 
-        let html5QrcodeScanner = new Html5QrcodeScanner(
-            "reader", { fps: 10, qrbox: {width: 250, height: 250} }, false);
-        html5QrcodeScanner.render(onScanSuccess);
+        // Fullscreen optimization for Html5Qrcode
+        const html5QrCode = new Html5Qrcode("reader");
+        const config = { fps: 15, qrbox: { width: 250, height: 250 }, aspectRatio: window.innerHeight / window.innerWidth };
+        
+        html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess)
+            .catch(err => {
+                console.error(err);
+                productDisplay.innerText = "ERREUR CAMERA";
+            });
 
         document.getElementById('send-manual').onclick = () => {
             const val = document.getElementById('barcode-input').value;
