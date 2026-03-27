@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jard Dashboard — The Barcode Bridge</title>
+    <link rel="stylesheet" href="/assets/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Jard — Audit & Inventaire</h1>
+            <p id="local-ip">Initialisation...</p>
+        </header>
+
+        <main>
+            <div class="pairing-card">
+                <h3>Connectez votre téléphone</h3>
+                <div id="qrcode-container"></div>
+                <p>Scannez ce QR code avec votre smartphone pour commencer le scan des codes-barres.</p>
+            </div>
+
+            <div class="scan-list-card">
+                <div class="list-header">
+                    <h3>Scans Synchronisés</h3>
+                    <button id="export-btn" class="btn-primary">Exporter vers Excel</button>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Code-barres</th>
+                                <th>Quantité</th>
+                                <th>Dernier Opérateur</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="scan-tbody">
+                            <!-- Les scans apparaîtront ici -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="/assets/app.js"></script>
+</body>
+</html>
