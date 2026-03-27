@@ -5,8 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Jard Dashboard — The Barcode Bridge</title>
     <link rel="stylesheet" href="/assets/style.css">
+    <!-- Local Assets for Instant Load -->
+    <script src="/assets/chart.min.js"></script>
+    <script src="/assets/qrcode.min.js"></script>
 </head>
 <body>
+    <!-- Animated Mesh Background -->
+    <div class="bg-animation"></div>
+    <div class="bg-blob blob-1"></div>
+    <div class="bg-blob blob-2"></div>
+    <div class="bg-blob blob-3"></div>
+
     <div class="container">
         <header>
             <h1>Jard — Audit & Inventaire</h1>
@@ -33,9 +42,9 @@
                 <div class="list-header">
                     <h3>Scans Synchronisés</h3>
                     <div class="header-actions">
-                        <button id="import-csv-btn" class="btn-secondary">Importer CSV</button>
                         <input type="file" id="csv-file-input" accept=".csv" style="display: none;">
-                        <button id="export-btn" class="btn-primary">Exporter vers Excel</button>
+                        <button id="import-csv-btn">Importer Produits (CSV)</button>
+                        <button id="export-btn">Exporter Excel</button>
                     </div>
                 </div>
                 <div class="table-container">
@@ -45,20 +54,19 @@
                                 <th>Code-barres</th>
                                 <th>Produit</th>
                                 <th>Quantité</th>
-                                <th>Dernier Opérateur</th>
+                                <th>Opérateur</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody id="scan-tbody">
-                            <!-- Les scans apparaîtront ici -->
+                            <!-- Scans will be injected here -->
                         </tbody>
                     </table>
                 </div>
             </div>
         </main>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
     <script src="/assets/app.js"></script>
 </body>
 </html>
