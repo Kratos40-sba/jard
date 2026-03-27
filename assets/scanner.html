@@ -32,6 +32,10 @@
         const workerInput = document.getElementById('worker-name');
         const resultDisplay = document.getElementById('scanned-result');
 
+        if (!token) {
+            document.body.innerHTML = "<h1>Erreur</h1><p>Token de sécurité manquant. Veuillez rescanner le QR code.</p>";
+        }
+
         // Play a short beep sound using Web Audio API
         function playBeep() {
             const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
