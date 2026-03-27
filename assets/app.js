@@ -17,22 +17,22 @@ function initCharts() {
             datasets: [{
                 label: 'Scans/s',
                 data: velocityData,
-                borderColor: '#4f46e5',
-                borderWidth: 2,
+                borderColor: '#6366f1',
+                borderWidth: 3,
                 pointRadius: 0,
                 tension: 0.4,
                 fill: true,
-                backgroundColor: 'rgba(79, 70, 229, 0.05)'
+                backgroundColor: 'rgba(99, 102, 241, 0.1)'
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             scales: { 
-                y: { beginAtZero: true, grid: { color: '#f3f4f6' }, ticks: { font: { size: 10 } } },
+                y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.03)' }, ticks: { font: { size: 10 } } },
                 x: { grid: { display: false }, ticks: { display: false } }
             },
-            plugins: { title: { display: true, text: 'VITESSE DE SCAN', align: 'start', color: '#6b7280', font: { weight: '800', size: 11 } }, legend: { display: false } }
+            plugins: { title: { display: true, text: 'VITESSE (LIVE)', align: 'start', color: '#6366f1', font: { weight: '800', size: 11 } }, legend: { display: false } }
         }
     });
 
@@ -44,19 +44,19 @@ function initCharts() {
             datasets: [{
                 label: 'Scans',
                 data: [],
-                backgroundColor: '#111827',
-                borderRadius: 4,
-                barThickness: 20
+                backgroundColor: 'rgba(99, 102, 241, 0.8)',
+                borderRadius: 8,
+                barThickness: 24
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             scales: { 
-                y: { beginAtZero: true, grid: { color: '#f3f4f6' }, ticks: { font: { size: 10 } } },
+                y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.03)' }, ticks: { font: { size: 10 } } },
                 x: { grid: { display: false } }
             },
-            plugins: { title: { display: true, text: 'PERFORMANCE', align: 'start', color: '#6b7280', font: { weight: '800', size: 11 } }, legend: { display: false } }
+            plugins: { title: { display: true, text: 'OPÉRATEURS', align: 'start', color: '#6366f1', font: { weight: '800', size: 11 } }, legend: { display: false } }
         }
     });
 }
