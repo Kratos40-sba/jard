@@ -187,6 +187,8 @@ td:last-child { border-radius: 0 12px 12px 0; }
 
 .row-anomaly { background: rgba(244, 63, 94, 0.05) !important; }
 .row-anomaly td { border-bottom-color: #fecdd3; }
+
+.btn {
     border: none;
     padding: 0.7rem 1.4rem;
     border-radius: 12px;
