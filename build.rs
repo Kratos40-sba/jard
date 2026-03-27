@@ -1,7 +1,9 @@
 fn main() {
     if std::env::var("CARGO_CFG_TARGET_OS").unwrap_or_default() == "windows" {
         let mut res = winres::WindowsResource::new();
-        res.set_icon("assets/icon.ico");
-        res.compile().unwrap();
+        if std::path::Path::new("assets/icon.ico").exists() {
+            res.set_icon("assets/icon.ico");
+        }
+        res.compile().ok(); // Don't panic if resource compilation fails
     }
 }
