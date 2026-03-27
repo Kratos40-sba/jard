@@ -6,8 +6,10 @@ authors = ["Your Name <you@example.com>"]
 description = "Jard: The Zero-Hardware Barcode Bridge."
 license = "MIT"
 
+[build-dependencies]
+winres = "0.1"
+
 [dependencies]
-# Async Runtime
 tokio = { version = "1", features = ["full"] }
 
 # Web Framework
