@@ -182,6 +182,7 @@ async function deleteScan(barcode) {
 document.getElementById('import-csv-btn').onclick = () => {
     document.getElementById('csv-file-input').click();
 };
+document.getElementById('import-csv-btn').className = "btn btn-secondary";
 
 document.getElementById('csv-file-input').onchange = (e) => {
     const file = e.target.files[0];
@@ -211,6 +212,7 @@ document.getElementById('csv-file-input').onchange = (e) => {
 document.getElementById('export-btn').onclick = async () => {
     window.location.href = `/api/export?token=${token}`;
 };
+document.getElementById('export-btn').className = "btn btn-primary";
 
 if (token) {
     getIP();
