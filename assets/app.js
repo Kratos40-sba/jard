@@ -122,6 +122,7 @@ async function updateList() {
         const tdActions = document.createElement('td');
         const btnDelete = document.createElement('button');
         btnDelete.textContent = "Supprimer";
+        btnDelete.className = "btn-danger";
         btnDelete.onclick = () => deleteScan(barcode);
         tdActions.appendChild(btnDelete);
 
