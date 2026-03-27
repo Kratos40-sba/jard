@@ -3,46 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Jard Scanner — Mobile Luxe</title>
+    <title>Jard Scanner — Premium Experience</title>
     <link rel="icon" type="image/png" href="/assets/icon.png">
     <link rel="stylesheet" href="/assets/style.css">
     <script src="https://unpkg.com/html5-qrcode"></script>
 </head>
 <body class="mobile-body">
-    <!-- Camera Background -->
     <div id="reader"></div>
-
-    <!-- Screen Flash Overlay -->
     <div id="flash-overlay"></div>
-
-    <!-- Focus Region Highlight -->
     <div class="scan-region-highlight"></div>
 
-    <!-- UI Overlay -->
     <div class="scanner-overlay">
-        <header class="mobile-header">
-            <div class="glass-card">
-                <input type="text" id="worker-name" placeholder="Votre Nom d'Opérateur">
+        <!-- Brand Header -->
+        <header class="mobile-header" style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
+            <div class="glass-card" style="padding: 0.8rem; border-radius: 18px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                <img src="/assets/icon.png" style="width: 32px; height: 32px; filter: brightness(1.2);">
+            </div>
+            <div class="glass-card" style="flex: 1; padding: 0.8rem 1.2rem; border-radius: 18px;">
+                <input type="text" id="worker-name" placeholder="Nom d'Opérateur" style="margin: 0; padding: 0.2rem; font-size: 0.9rem;">
             </div>
         </header>
 
-        <div id="scan-result" class="glass-card scan-result-card">
-            <span class="product-label">DERNIER SCAN</span>
-            <div id="scanned-result" class="barcode-text">---</div>
-            <div id="product-name" style="font-size: 0.8rem; font-weight: 700; color: #10b981;">Prêt à scanner</div>
+        <!-- Main Content Area (Dynamic) -->
+        <div id="scanner-view" class="view-pane active">
+            <div id="scan-result" class="glass-card scan-result-card" style="margin-bottom: 1rem;">
+                <span class="product-label" style="letter-spacing: 0.1em; opacity: 0.5;">DERNIER SCAN</span>
+                <div id="scanned-result" class="barcode-text" style="font-size: 2.2rem; margin: 0.8rem 0;">---</div>
+                <div id="product-name" style="font-size: 0.85rem; font-weight: 800; color: #10b981; text-transform: uppercase;">Prêt à scanner</div>
+            </div>
+
+            <div class="glass-card" style="padding: 1.2rem;">
+                <div style="font-size: 0.65rem; font-weight: 800; margin-bottom: 1rem; opacity: 0.4; letter-spacing: 0.05em;">HISTORIQUE RÉCENT</div>
+                <div id="history-tray"></div>
+            </div>
         </div>
 
-        <div class="glass-card">
-            <div style="font-size: 0.7rem; font-weight: 800; margin-bottom: 0.8rem; opacity: 0.6;">HISTORIQUE RÉCENT</div>
-            <div id="history-tray">
-                <!-- History items injected here -->
-            </div>
-            
-            <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
-                <input type="text" id="barcode-input" placeholder="Saisie manuelle..." style="flex: 1; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 12px; padding: 0.6rem; color: white; outline: none;">
-                <button id="send-manual" class="btn btn-primary" style="padding: 0.6rem 1rem; border-radius: 12px;">Go</button>
+        <div id="manual-view" class="view-pane" style="display: none;">
+            <div class="glass-card" style="text-align: center;">
+                <h3 style="margin-top: 0; font-weight: 800;">Saisie Manuelle</h3>
+                <p style="font-size: 0.8rem; opacity: 0.6; margin-bottom: 2rem;">Entrez le code manuellement si le scan échoue.</p>
+                <input type="text" id="barcode-input" placeholder="Entrez le code ici..." style="width: 100%; box-sizing: border-box; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 1.5rem; border-radius: 20px; color: white; font-size: 1.5rem; text-align: center; margin-bottom: 1.5rem; outline: none;">
+                <button id="send-manual" class="btn btn-primary" style="width: 100%; padding: 1.2rem; font-size: 1rem; border-radius: 20px;">Envoyer au Système</button>
             </div>
         </div>
+
+        <!-- Bottom Tabs -->
+        <nav class="tab-nav">
+            <button id="tab-scan" class="tab-btn active">
+                <span style="font-size: 1.2rem;">📷</span>
+                Scanner
+            </button>
+            <button id="tab-manual" class="tab-btn">
+                <span style="font-size: 1.2rem;">⌨️</span>
+                Manuel
+            </button>
+        </nav>
     </div>
 
     <script>
@@ -55,8 +70,23 @@
         const flashOverlay = document.getElementById('flash-overlay');
 
         if (!token) {
-            document.body.innerHTML = "<div class='glass-card' style='margin: 2rem;'><h1>Erreur</h1><p>Token manquant. Veuillez rescanner le QR code.</p></div>";
+            document.body.innerHTML = "<div class='glass-card' style='margin: 2rem; text-align: center;'><h1>Erreur</h1><p>Token manquant. Veuillez rescanner le QR code.</p></div>";
         }
+
+        // Tab Switching Logic
+        document.getElementById('tab-scan').onclick = () => {
+            document.getElementById('scanner-view').style.display = 'block';
+            document.getElementById('manual-view').style.display = 'none';
+            document.getElementById('tab-scan').classList.add('active');
+            document.getElementById('tab-manual').classList.remove('active');
+        };
+        document.getElementById('tab-manual').onclick = () => {
+            document.getElementById('scanner-view').style.display = 'none';
+            document.getElementById('manual-view').style.display = 'block';
+            document.getElementById('tab-scan').classList.remove('active');
+            document.getElementById('tab-manual').classList.add('active');
+            document.getElementById('barcode-input').focus();
+        };
 
         function flash() {
             flashOverlay.classList.add('flash-active');
@@ -71,57 +101,53 @@
             gainNode.connect(audioCtx.destination);
             oscillator.type = 'sine';
             oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
-            gainNode.gain.setValueAtTime(0.05, audioCtx.currentTime);
+            gainNode.gain.setValueAtTime(0.04, audioCtx.currentTime);
             oscillator.start();
-            oscillator.stop(audioCtx.currentTime + 0.08);
+            oscillator.stop(audioCtx.currentTime + 0.1);
         }
 
         function addToHistory(barcode) {
             const item = document.createElement('div');
             item.className = 'history-item';
-            item.innerHTML = `<span>${barcode}</span><span style="opacity:0.5">${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>`;
+            item.style.background = 'rgba(255,255,255,0.05)';
+            item.innerHTML = `<span style='font-weight:700'>${barcode}</span><span style="opacity:0.4; font-size:0.7rem;">${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>`;
             historyTray.prepend(item);
             if (historyTray.children.length > 3) historyTray.lastElementChild.remove();
         }
 
         function onScanSuccess(decodedText) {
-            if (decodedText === resultDisplay.innerText) return; // Debounce
+            if (decodedText === resultDisplay.innerText) return;
             
-            const worker = workerInput.value || "Mobile";
+            const worker = workerInput.value || "Scanner Mobile";
             resultDisplay.innerText = decodedText;
             
-            // UI Feedback
+            // Visual & Audio Feedback
             flash();
             playBeep();
             if (navigator.vibrate) navigator.vibrate([100]);
             addToHistory(decodedText);
             
             const resultCard = document.getElementById('scan-result');
-            resultCard.classList.add('new-scan');
-            setTimeout(() => resultCard.classList.remove('new-scan'), 300);
+            resultCard.classList.add('success-glow');
+            setTimeout(() => resultCard.classList.remove('success-glow'), 600);
 
             fetch('/api/scan', {
                 method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'X-Jard-Token': token
-                },
+                headers: { 'Content-Type': 'application/json', 'X-Jard-Token': token },
                 body: JSON.stringify({ barcode: decodedText, worker: worker })
             }).then(response => {
-                if (response.status === 401) productDisplay.innerText = "ACCÈS REFUSÉ";
-                else if (response.ok) productDisplay.innerText = "TRANSMISSION RÉUSSIE";
-                else productDisplay.innerText = "ERREUR RÉSEAU";
+                if (response.ok) productDisplay.innerText = "SYNCHRONISÉ ✓";
+                else productDisplay.innerText = "ERREUR TRANSMISSION";
             });
         }
 
-        // Fullscreen optimization for Html5Qrcode
         const html5QrCode = new Html5Qrcode("reader");
-        const config = { fps: 15, qrbox: { width: 250, height: 250 }, aspectRatio: window.innerHeight / window.innerWidth };
+        const config = { fps: 20, qrbox: { width: 250, height: 250 }, aspectRatio: window.innerHeight / window.innerWidth };
         
         html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess)
             .catch(err => {
                 console.error(err);
-                productDisplay.innerText = "ERREUR CAMERA";
+                productDisplay.innerHTML = "<span style='color:#f43f5e'>ERREUR CAMERA</span>";
             });
 
         document.getElementById('send-manual').onclick = () => {
@@ -129,6 +155,8 @@
             if (val) {
                 onScanSuccess(val);
                 document.getElementById('barcode-input').value = '';
+                // Switch back after manual entry
+                setTimeout(() => document.getElementById('tab-scan').click(), 500);
             }
         };
     </script>
