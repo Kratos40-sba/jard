@@ -149,26 +149,32 @@ async function updateList() {
 }
 
 // ... rest of same functions (getIP, renderQRCode, deleteScan, CSV Import) ...
+let cachedIp = null;
+
 async function getIP() {
-    if (!token) return;
+    if (cachedIp) return cachedIp;
     const response = await fetch('/api/ip', {
         headers: { 'X-Jard-Token': token }
     });
     const data = await response.json();
-    document.getElementById('local-ip').innerText = `Serveur local à l'adresse http://${data.ip}:8080`;
+    cachedIp = data.ip;
+    document.getElementById('local-ip').innerText = `Serveur local à l'adresse http://${cachedIp}:8080`;
+    return cachedIp;
 }
 
 async function renderQRCode() {
-    if (!token) return;
-    const response = await fetch('/api/qrcode', {
-        headers: { 'X-Jard-Token': token }
-    });
-    const data = await response.json();
-    new QRCode(document.getElementById("qrcode-container"), {
-        text: data.url,
-        width: 256,
-        height: 256
-    });
+    const ip = await getIP();
+    const url = `http://${ip}:8080/scanner?token=${token}`;
+    
+    // Clear container
+    const container = document.getElementById('qrcode-container');
+    container.innerHTML = '';
+    
+    // Use the local qrcode-generator library
+    const qr = qrcode(0, 'M');
+    qr.addData(url);
+    qr.make();
+    container.innerHTML = qr.createImgTag(5);
 }
 
 async function deleteScan(barcode) {
