@@ -8,6 +8,7 @@ use tracing_subscriber::FmtSubscriber;
 pub mod api;
 mod assets;
 pub mod common;
+pub mod infra;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -45,14 +46,29 @@ async fn main() -> anyhow::Result<()> {
         .expect("Failed to register mDNS service");
     info!("mDNS: Registered service as raf.local");
 
-    // 3. Initialize State & Security Token
-    use rand::distributions::{Alphanumeric, DistString};
-    let token = Alphanumeric.sample_string(&mut rand::thread_rng(), 12);
+    // 3. Initialize Database
+    let db = Arc::new(infra::db::Database::new("raf.db").expect("Failed to initialize database"));
+    
+    // Load existing data
+    let scans_map = DashMap::new();
+    if let Ok(loaded_scans) = db.load_scans() {
+        for (k, v) in loaded_scans {
+            scans_map.insert(k, v);
+        }
+    }
+
+    let orders_map = DashMap::new();
+    if let Ok(loaded_orders) = db.load_orders() {
+        for o in loaded_orders {
+            orders_map.insert(o.id.clone(), o);
+        }
+    }
 
     let state = Arc::new(AppState {
-        scans: DashMap::new(),
-        orders: DashMap::new(),
+        scans: scans_map,
+        orders: orders_map,
         product_lookup: DashMap::new(),
+        db: db.clone(),
         access_token: token.clone(),
         rate_limiter: DashMap::new(),
     });

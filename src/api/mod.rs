@@ -51,6 +51,7 @@ pub struct AppState {
     pub scans: DashMap<String, ScanRecord>,
     pub orders: DashMap<String, Order>,
     pub product_lookup: DashMap<String, String>,
+    pub db: Arc<crate::infra::db::Database>,
     pub access_token: String,
     pub rate_limiter: DashMap<std::net::IpAddr, (chrono::DateTime<chrono::Utc>, u32)>,
 }
