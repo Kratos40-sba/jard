@@ -206,8 +206,10 @@ document.getElementById('export-btn').onclick = async () => {
 if (token) {
     getIP();
     renderQRCode();
+    // Initialize charts immediately with empty data to avoid "weird" loading later
+    if (!velocityChart) initCharts();
+    updateList(); 
     setInterval(updateList, 1000);
-    updateList();
 } else {
     document.body.innerHTML = "<h1>Erreur</h1><p>Le token de sécurité est manquant dans l'URL.</p>";
 }
