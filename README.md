@@ -1,37 +1,38 @@
-# Jard (جرد) — The Zero-Hardware Barcode Bridge
+# Jard (جرد) — Le Pont Code-barres Sans Matériel
 
-Turn any Windows PC into a local Wi-Fi server and use your personal smartphones as high-speed, synchronized barcode scanners for inventory.
+Transformez n'importe quel PC Windows en serveur Wi-Fi local et utilisez vos smartphones comme scanners de codes-barres haute vitesse synchronisés.
 
 ## 🚀 Vision
-Jard eliminates the need for expensive dedicated barcode hardware. By bridging your phone's camera to your PC via local Wi-Fi, it creates a seamless, zero-install inventory experience.
+Jard élimine le besoin de matériel de scan coûteux. En reliant la caméra de votre téléphone à votre PC via le Wi-Fi local, il crée une expérience d'inventaire fluide et sans installation.
 
-## ✨ Features
-- **Zero Installation**: Single `.exe` includes everything; the mobile app is served directly from the PC.
-- **High Concurrency**: Multiple employees can scan simultaneously to the same PC.
-- **Network Auto-Discovery**: Automatically finds your local IP and generates a pairing QR code.
-- **Real-Time Synchronization**: Watch scans appear on your desktop as they happen.
-- **Excel Export**: Clean, aggregated data ready for your POS software.
+## ✨ Caractéristiques
+- **Zéro Installation** : Un seul fichier `.exe` contient tout ; l'application mobile est servie directement par le PC.
+- **Sécurité Intégrée** : Authentification par jeton unique et protection contre les injections XSS.
+- **Multi-Utilisateurs** : Plusieurs employés peuvent scanner simultanément vers le même PC.
+- **Auto-Découverte Réseau** : Trouve automatiquement votre IP locale et génère un QR code de couplage.
+- **Temps Réel** : Visualisez les scans sur votre bureau au fur et à mesure qu'ils arrivent.
+- **Export Excel** : Données propres et agrégées prêtes pour votre logiciel de gestion.
 
-## 🛠 Tech Stack
-- **Backend**: Rust, Axum, Tokio
-- **Desktop UI**: egui / eframe
-- **Mobile UI**: HTML5 + html5-qrcode
-- **Exporting**: rust_xlsxwriter
+## 📖 Comment ça marche ?
+1. **Lancement** : Ouvrez `jard.exe` sur votre PC. Votre navigateur s'ouvrira automatiquement sur le tableau de bord.
+2. **Connexion** : Scannez le QR code affiché avec n'importe quel smartphone.
+3. **Scan** : Commencez à scanner les codes-barres sur la page mobile.
+4. **Export** : Une fois terminé, cliquez sur "Exporter vers Excel" sur votre PC.
 
-## 📖 How it Works
-1. **Launch**: Open `Jard.exe` on your PC.
-2. **Connect**: Scan the displayed QR code with any smartphone.
-3. **Scan**: Start scanning barcodes on the mobile web page.
-4. **Export**: Once finished, click "Export to Excel" on your PC.
-
-## 🚧 Development
+## 🛠 Installation (Développeur)
 ```bash
-# Clone the repository
-git clone https://github.com/your-org/jard.git
+# Cloner le dépôt
+git clone https://github.com/Kratos40-sba/jard.git
 
-# Run the project
+# Lancer le projet
 cargo run
 ```
+
+## 📦 Générer le binaire
+Pour produire votre propre fichier `.exe` :
+1. Créez un tag : `git tag v1.0.0`
+2. Poussez le tag : `git push origin v1.0.0`
+3. Téléchargez le binaire depuis l'onglet **Releases** sur GitHub.
 
 ## ⚖️ License
 MIT
