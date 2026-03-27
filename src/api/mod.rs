@@ -25,6 +25,7 @@ pub struct ScanRequest {
 
 pub struct AppState {
     pub scans: DashMap<String, ScanRecord>,
+    pub product_lookup: DashMap<String, String>,
     pub access_token: String,
     pub rate_limiter: DashMap<std::net::IpAddr, (chrono::DateTime<chrono::Utc>, u32)>,
 }
@@ -38,6 +39,7 @@ pub fn router(state: SharedState) -> Router {
         .route("/scan", post(receive_scan))
         .route("/scans", get(list_scans))
         .route("/scan/:barcode", delete(delete_scan))
+        .route("/products", post(update_products))
         .route("/export", get(export_excel))
         .layer(middleware::from_fn_with_state(
             state.clone(),
@@ -192,13 +194,45 @@ async fn receive_scan(
     StatusCode::OK
 }
 
+#[derive(Debug, Deserialize)]
+pub struct ProductMetadata {
+    pub barcode: String,
+    pub name: String,
+}
+
+async fn update_products(
+    State(state): State<SharedState>,
+    Json(payload): Json<Vec<ProductMetadata>>,
+) -> StatusCode {
+    for item in payload {
+        state.product_lookup.insert(item.barcode, item.name);
+    }
+    StatusCode::OK
+}
+
 async fn list_scans(State(state): State<SharedState>) -> Json<serde_json::Value> {
-    let map: std::collections::HashMap<String, ScanRecord> = state
-        .scans
-        .iter()
-        .map(|r| (r.key().clone(), r.value().clone()))
-        .collect();
-    Json(serde_json::json!(map))
+    let mut results = serde_json::Map::new();
+
+    for entry in state.scans.iter() {
+        let barcode = entry.key();
+        let record = entry.value();
+        let product_name = state
+            .product_lookup
+            .get(barcode)
+            .map(|v| v.value().clone())
+            .unwrap_or_else(|| "Produit inconnu".to_string());
+
+        results.insert(
+            barcode.clone(),
+            serde_json::json!({
+                "count": record.count,
+                "last_worker": record.last_worker,
+                "product_name": product_name
+            }),
+        );
+    }
+
+    Json(serde_json::Value::Object(results))
 }
 
 async fn delete_scan(State(state): State<SharedState>, Path(barcode): Path<String>) -> StatusCode {
@@ -213,16 +247,26 @@ async fn export_excel(State(state): State<SharedState>) -> impl IntoResponse {
     let worksheet = workbook.add_worksheet();
 
     worksheet.write_string(0, 0, "Barcode").unwrap();
-    worksheet.write_string(0, 1, "Count").unwrap();
-    worksheet.write_string(0, 2, "Last Worker").unwrap();
+    worksheet.write_string(0, 1, "Produit").unwrap();
+    worksheet.write_string(0, 2, "Quantité").unwrap();
+    worksheet.write_string(0, 3, "Dernier Opérateur").unwrap();
 
     for (row, entry) in state.scans.iter().enumerate() {
         let (barcode, record) = (entry.key(), entry.value());
+        let product_name = state
+            .product_lookup
+            .get(barcode)
+            .map(|v| v.value().clone())
+            .unwrap_or_else(|| "Inconnu".to_string());
+
         worksheet
             .write_string((row + 1) as u32, 0, barcode)
             .unwrap();
         worksheet
-            .write_number((row + 1) as u32, 1, record.count as f64)
+            .write_string((row + 1) as u32, 1, &product_name)
+            .unwrap();
+        worksheet
+            .write_number((row + 1) as u32, 2, record.count as f64)
             .unwrap();
         worksheet
             .write_string((row + 1) as u32, 2, &record.last_worker)

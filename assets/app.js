@@ -18,18 +18,25 @@ async function updateList() {
     Object.entries(data).forEach(([barcode, info]) => {
         const tr = document.createElement('tr');
         
-        // Use textContent to prevent XSS
+        // Barcode
         const tdBarcode = document.createElement('td');
         tdBarcode.textContent = barcode;
         
+        // Product Name (NEW)
+        const tdProductName = document.createElement('td');
+        tdProductName.textContent = info.product_name || "Inconnu";
+        
+        // Count
         const tdCount = document.createElement('td');
         const strongCount = document.createElement('strong');
         strongCount.textContent = info.count;
         tdCount.appendChild(strongCount);
         
+        // Worker
         const tdWorker = document.createElement('td');
         tdWorker.textContent = info.last_worker;
         
+        // Actions
         const tdActions = document.createElement('td');
         const btnDelete = document.createElement('button');
         btnDelete.textContent = "Supprimer";
@@ -37,6 +44,7 @@ async function updateList() {
         tdActions.appendChild(btnDelete);
 
         tr.appendChild(tdBarcode);
+        tr.appendChild(tdProductName);
         tr.appendChild(tdCount);
         tr.appendChild(tdWorker);
         tr.appendChild(tdActions);
@@ -45,6 +53,7 @@ async function updateList() {
     });
 }
 
+// ... rest of functions ...
 async function getIP() {
     if (!token) return;
     const response = await fetch('/api/ip', {
@@ -75,13 +84,50 @@ async function deleteScan(barcode) {
     updateList();
 }
 
+// CSV Import Logic
+document.getElementById('import-csv-btn').onclick = () => {
+    document.getElementById('csv-file-input').click();
+};
+
+document.getElementById('csv-file-input').onchange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+        const text = event.target.result;
+        const lines = text.split('\n');
+        const products = [];
+
+        for (let i = 1; i < lines.length; i++) { // Skip header
+            const [barcode, name] = lines[i].split(',').map(s => s.trim());
+            if (barcode && name) {
+                products.push({ barcode, name });
+            }
+        }
+
+        if (products.length > 0) {
+            const resp = await fetch('/api/products', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-Jard-Token': token
+                },
+                body: JSON.stringify(products)
+            });
+            if (resp.ok) {
+                alert(`${products.length} produits importés !`);
+                updateList();
+            } else {
+                alert("Erreur lors de l'import : " + resp.status);
+            }
+        }
+    };
+    reader.readAsText(file);
+};
+
 document.getElementById('export-btn').onclick = async () => {
-    // For downloads, we pass the token as a query param or separate auth mechanism if needed, 
-    // but for now let's use the URL since it's a simple GET.
     window.location.href = `/api/export?token=${token}`;
-    // Note: The backend export_excel currently doesn't check query params for token, 
-    // it expects the header. But browser window.location.href doesn't send custom headers.
-    // I'll update the backend to also check query params for the export route.
 };
 
 // Initial calls

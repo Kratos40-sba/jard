@@ -48,6 +48,7 @@ async fn main() -> anyhow::Result<()> {
 
     let state = Arc::new(AppState {
         scans: DashMap::new(),
+        product_lookup: DashMap::new(),
         access_token: token.clone(),
         rate_limiter: DashMap::new(),
     });

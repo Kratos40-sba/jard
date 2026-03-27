@@ -23,13 +23,18 @@
             <div class="scan-list-card">
                 <div class="list-header">
                     <h3>Scans Synchronisés</h3>
-                    <button id="export-btn" class="btn-primary">Exporter vers Excel</button>
+                    <div class="header-actions">
+                        <button id="import-csv-btn" class="btn-secondary">Importer CSV</button>
+                        <input type="file" id="csv-file-input" accept=".csv" style="display: none;">
+                        <button id="export-btn" class="btn-primary">Exporter vers Excel</button>
+                    </div>
                 </div>
                 <div class="table-container">
                     <table>
                         <thead>
                             <tr>
                                 <th>Code-barres</th>
+                                <th>Produit</th>
                                 <th>Quantité</th>
                                 <th>Dernier Opérateur</th>
                                 <th>Actions</th>
