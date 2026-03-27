@@ -19,7 +19,30 @@ async fn main() -> anyhow::Result<()> {
 
     info!("Starting Jard — The Zero-Hardware Barcode Bridge...");
 
-    // 2. Initialize State & Security Token
+    // 2. Initialize mDNS Discovery (jard.local)
+    use mdns_sd::{ServiceDaemon, ServiceInfo};
+    let mdns = ServiceDaemon::new().expect("Failed to create mDNS daemon");
+    let service_type = "_http._tcp.local.";
+    let instance_name = "jard";
+    let host_name = "jard.local.";
+    let port = 8080;
+    
+    // Identify local IP for mDNS
+    let my_local_ip = local_ip_address::local_ip().unwrap_or(std::net::IpAddr::V4(std::net::Ipv4Addr::new(127, 0, 0, 1)));
+    
+    let service_info = ServiceInfo::new(
+        service_type,
+        instance_name,
+        host_name,
+        my_local_ip.to_string(),
+        port,
+        None,
+    ).expect("Failed to create mDNS service info");
+
+    mdns.register(service_info).expect("Failed to register mDNS service");
+    info!("mDNS: Registered service as jard.local");
+
+    // 3. Initialize State & Security Token
     use rand::distributions::{Alphanumeric, DistString};
     let token = Alphanumeric.sample_string(&mut rand::thread_rng(), 12);
 
@@ -36,10 +59,8 @@ async fn main() -> anyhow::Result<()> {
 
     info!("--------------------------------------------------");
     info!(" PC Dashboard:   http://localhost:8080?token={}", token);
-    info!(
-        " Mobile Scanner: http://{}:8080/scanner?token={}",
-        my_local_ip, token
-    );
+    info!(" Mobile Scanner: http://{}:8080/scanner?token={}", my_local_ip, token);
+    info!(" Zero-Conf:      http://jard.local:8080/scanner?token={}", token);
     info!("--------------------------------------------------");
 
     // 4. Auto-Open Browser

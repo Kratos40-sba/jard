@@ -40,6 +40,7 @@ config = "0.14"
 dotenvy = "0.15"
 rand = "0.8"
 serde_urlencoded = "0.7"
+mdns-sd = "0.13"
 
 # Exporting
 rust_xlsxwriter = "0.76"
