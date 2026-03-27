@@ -58,30 +58,40 @@ async fn main() -> anyhow::Result<()> {
         .unwrap_or(std::net::IpAddr::V4(std::net::Ipv4Addr::new(127, 0, 0, 1)));
     let addr = SocketAddr::from(([0, 0, 0, 0], 8080));
 
+    // 5. Zero-Config HTTPS (Self-Signed)
+    use axum_server::tls_rustls::RustlsConfig;
+    use rcgen::generate_simple_self_signed;
+
+    let cert_subject = vec![
+        "jard.local".to_string(),
+        "localhost".to_string(),
+        my_local_ip.to_string(),
+    ];
+    let cert = generate_simple_self_signed(cert_subject).map_err(|e| anyhow::anyhow!("Failed to generate cert: {}", e))?;
+    let cert_der = cert.cert.der().to_vec();
+    let key_der = cert.key_pair.serialize_der();
+
+    let config = RustlsConfig::from_der(vec![cert_der], key_der)
+        .await
+        .map_err(|e| anyhow::anyhow!("Failed to create Rustls config: {}", e))?;
+
     info!("--------------------------------------------------");
-    info!(" PC Dashboard:   http://localhost:8080?token={}", token);
-    info!(" Mobile Scanner: http://{}:8080/scanner?token={}", my_local_ip, token);
-    info!(" Zero-Conf:      http://jard.local:8080/scanner?token={}", token);
+    info!(" PC Dashboard:   https://localhost:8080?token={}", token);
+    info!(" Mobile Scanner: https://{}:8080/scanner?token={}", my_local_ip, token);
+    info!(" Zero-Conf:      https://jard.local:8080/scanner?token={}", token);
     info!("--------------------------------------------------");
 
-    // 4. Auto-Open Browser
-    let dashboard_url = format!("http://localhost:8080?token={}", token);
+    // 6. Auto-Open Browser
+    let dashboard_url = format!("https://localhost:8080?token={}", token);
     if let Err(e) = open::that(dashboard_url) {
         tracing::warn!("Failed to open browser automatically: {}", e);
     }
 
-    // 5. Run Server with Graceful Shutdown
-    let listener = tokio::net::TcpListener::bind(addr)
+    // 7. Run HTTPS Server
+    axum_server::bind_rustls(addr, config)
+        .serve(router(state).into_make_service_with_connect_info::<SocketAddr>())
         .await
-        .map_err(|e| anyhow::anyhow!("Failed to bind to {}: {}", addr, e))?;
-
-    axum::serve(
-        listener,
-        router(state).into_make_service_with_connect_info::<SocketAddr>(),
-    )
-    .with_graceful_shutdown(shutdown_signal())
-    .await
-    .map_err(|e| anyhow::anyhow!("Server runtime error: {}", e))?;
+        .map_err(|e| anyhow::anyhow!("Server runtime error: {}", e))?;
 
     Ok(())
 }

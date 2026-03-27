@@ -14,8 +14,9 @@ tokio = { version = "1", features = ["full"] }
 
 # Web Framework
 axum = "0.7"
+axum-server = { version = "0.7", features = ["tls-rustls"] }
 tower = { version = "0.4", features = ["full"] }
-tower-http = { version = "0.5", features = ["cors", "trace", "fs"] }
+tower-http = { version = "0.5", features = ["cors", "trace", "fs", "add-extension"] }
 
 # Serialization
 serde = { version = "1.0", features = ["derive"] }
@@ -43,6 +44,8 @@ dotenvy = "0.15"
 rand = "0.8"
 serde_urlencoded = "0.7"
 mdns-sd = "0.13"
+rcgen = "0.13"
+rustls = "0.23"
 
 # Exporting
 rust_xlsxwriter = "0.76"
