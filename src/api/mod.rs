@@ -12,6 +12,14 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ScanRecord {
+    pub count: u32,
+    pub last_worker: String,
+    pub is_anomaly: bool,
+    pub anomaly_reason: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct OrderItem {
     pub barcode: String,
     pub name: String,
@@ -207,28 +215,50 @@ async fn receive_scan(
             }
 
             if found {
-                return (StatusCode::OK, Json(serde_json::json!({ "status": "ok", "message": format!("Correct: {}", item_name) })));
+                return (
+                    StatusCode::OK,
+                    Json(
+                        serde_json::json!({ "status": "ok", "message": format!("Correct: {}", item_name) }),
+                    ),
+                );
             } else if over_packed {
-                return (StatusCode::BAD_REQUEST, Json(serde_json::json!({ "status": "error", "message": "Déjà complet!" })));
+                return (
+                    StatusCode::BAD_REQUEST,
+                    Json(serde_json::json!({ "status": "error", "message": "Déjà complet!" })),
+                );
             } else {
-                return (StatusCode::BAD_REQUEST, Json(serde_json::json!({ "status": "error", "message": "ARTICLE INCORRECT" })));
+                return (
+                    StatusCode::BAD_REQUEST,
+                    Json(serde_json::json!({ "status": "error", "message": "ARTICLE INCORRECT" })),
+                );
             }
         }
     }
 
     // 2. Simple Inventory Fallback (Legacy Jard)
     let is_unknown = !state.product_lookup.contains_key(&payload.barcode);
-    state.scans.entry(payload.barcode.clone()).and_modify(|r| {
-        r.count += 1;
-        r.last_worker = payload.worker.clone();
-    }).or_insert(ScanRecord {
-        count: 1,
-        last_worker: payload.worker,
-        is_anomaly: is_unknown,
-        anomaly_reason: if is_unknown { Some("Inconnu".to_string()) } else { None },
-    });
+    state
+        .scans
+        .entry(payload.barcode.clone())
+        .and_modify(|r| {
+            r.count += 1;
+            r.last_worker = payload.worker.clone();
+        })
+        .or_insert(ScanRecord {
+            count: 1,
+            last_worker: payload.worker,
+            is_anomaly: is_unknown,
+            anomaly_reason: if is_unknown {
+                Some("Inconnu".to_string())
+            } else {
+                None
+            },
+        });
 
-    (StatusCode::OK, Json(serde_json::json!({ "status": "ok", "message": "Scanné" })))
+    (
+        StatusCode::OK,
+        Json(serde_json::json!({ "status": "ok", "message": "Scanné" })),
+    )
 }
 
 async fn create_order(
@@ -238,12 +268,16 @@ async fn create_order(
     let order = Order {
         id: payload.id.clone(),
         status: "Active".to_string(),
-        items: payload.items.into_iter().map(|(barcode, name, qty)| OrderItem {
-            barcode,
-            name,
-            target_qty: qty,
-            packed_qty: 0,
-        }).collect(),
+        items: payload
+            .items
+            .into_iter()
+            .map(|(barcode, name, qty)| OrderItem {
+                barcode,
+                name,
+                target_qty: qty,
+                packed_qty: 0,
+            })
+            .collect(),
     };
     state.orders.insert(payload.id, order);
     StatusCode::CREATED

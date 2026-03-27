@@ -1,5 +1,5 @@
 use dashmap::DashMap;
-use jard::api::{router, AppState};
+use raf::api::{router, AppState};
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tracing::{info, Level};
@@ -26,10 +26,11 @@ async fn main() -> anyhow::Result<()> {
     let instance_name = "raf";
     let host_name = "raf.local.";
     let port = 8080;
-    
+
     // Identify local IP for mDNS
-    let my_local_ip = local_ip_address::local_ip().unwrap_or(std::net::IpAddr::V4(std::net::Ipv4Addr::new(127, 0, 0, 1)));
-    
+    let my_local_ip = local_ip_address::local_ip()
+        .unwrap_or(std::net::IpAddr::V4(std::net::Ipv4Addr::new(127, 0, 0, 1)));
+
     let service_info = ServiceInfo::new(
         service_type,
         instance_name,
@@ -37,9 +38,11 @@ async fn main() -> anyhow::Result<()> {
         my_local_ip.to_string(),
         port,
         None,
-    ).expect("Failed to create mDNS service info");
+    )
+    .expect("Failed to create mDNS service info");
 
-    mdns.register(service_info).expect("Failed to register mDNS service");
+    mdns.register(service_info)
+        .expect("Failed to register mDNS service");
     info!("mDNS: Registered service as raf.local");
 
     // 3. Initialize State & Security Token
@@ -68,7 +71,8 @@ async fn main() -> anyhow::Result<()> {
         "localhost".to_string(),
         my_local_ip.to_string(),
     ];
-    let cert = generate_simple_self_signed(cert_subject).map_err(|e| anyhow::anyhow!("Failed to generate cert: {}", e))?;
+    let cert = generate_simple_self_signed(cert_subject)
+        .map_err(|e| anyhow::anyhow!("Failed to generate cert: {}", e))?;
     let cert_der = cert.cert.der().to_vec();
     let key_der = cert.key_pair.serialize_der();
 
@@ -78,8 +82,14 @@ async fn main() -> anyhow::Result<()> {
 
     info!("--------------------------------------------------");
     info!(" PC Dashboard:   https://localhost:8080?token={}", token);
-    info!(" Mobile Picker:  https://{}:8080/scanner?token={}", my_local_ip, token);
-    info!(" Zero-Conf:      https://raf.local:8080/scanner?token={}", token);
+    info!(
+        " Mobile Picker:  https://{}:8080/scanner?token={}",
+        my_local_ip, token
+    );
+    info!(
+        " Zero-Conf:      https://raf.local:8080/scanner?token={}",
+        token
+    );
     info!("--------------------------------------------------");
 
     // 6. Auto-Open Browser
@@ -88,8 +98,18 @@ async fn main() -> anyhow::Result<()> {
         tracing::warn!("Failed to open browser automatically: {}", e);
     }
 
-    // 7. Run HTTPS Server
+    // 7. Run HTTPS Server with Graceful Shutdown
+    let handle = axum_server::Handle::new();
+
+    // Spawn a task to listen for shutdown signal
+    let shutdown_handle = handle.clone();
+    tokio::spawn(async move {
+        shutdown_signal().await;
+        shutdown_handle.graceful_shutdown(Some(std::time::Duration::from_secs(10)));
+    });
+
     axum_server::bind_rustls(addr, config)
+        .handle(handle)
         .serve(router(state).into_make_service_with_connect_info::<SocketAddr>())
         .await
         .map_err(|e| anyhow::anyhow!("Server runtime error: {}", e))?;
