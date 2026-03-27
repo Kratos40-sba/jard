@@ -17,14 +17,14 @@ async fn main() -> anyhow::Result<()> {
         .finish();
     tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
 
-    info!("Starting Jard — The Zero-Hardware Barcode Bridge...");
+    info!("Starting RAF (رف) — The Order Fulfillment Engine...");
 
     // 2. Initialize mDNS Discovery (jard.local)
     use mdns_sd::{ServiceDaemon, ServiceInfo};
     let mdns = ServiceDaemon::new().expect("Failed to create mDNS daemon");
     let service_type = "_http._tcp.local.";
-    let instance_name = "jard";
-    let host_name = "jard.local.";
+    let instance_name = "raf";
+    let host_name = "raf.local.";
     let port = 8080;
     
     // Identify local IP for mDNS
@@ -40,7 +40,7 @@ async fn main() -> anyhow::Result<()> {
     ).expect("Failed to create mDNS service info");
 
     mdns.register(service_info).expect("Failed to register mDNS service");
-    info!("mDNS: Registered service as jard.local");
+    info!("mDNS: Registered service as raf.local");
 
     // 3. Initialize State & Security Token
     use rand::distributions::{Alphanumeric, DistString};
@@ -77,8 +77,8 @@ async fn main() -> anyhow::Result<()> {
 
     info!("--------------------------------------------------");
     info!(" PC Dashboard:   https://localhost:8080?token={}", token);
-    info!(" Mobile Scanner: https://{}:8080/scanner?token={}", my_local_ip, token);
-    info!(" Zero-Conf:      https://jard.local:8080/scanner?token={}", token);
+    info!(" Mobile Picker:  https://{}:8080/scanner?token={}", my_local_ip, token);
+    info!(" Zero-Conf:      https://raf.local:8080/scanner?token={}", token);
     info!("--------------------------------------------------");
 
     // 6. Auto-Open Browser
