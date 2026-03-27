@@ -106,17 +106,21 @@
         }
 
         function triggerError() {
-            flashOverlay.style.background = 'rgba(239, 68, 68, 0.4)';
+            flashOverlay.style.background = 'rgba(239, 68, 68, 0.8)';
             flashOverlay.classList.add('flash-active');
-            if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+            // "Violent" vibration: SOS pattern or long pulse
+            if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 400]);
+            
             feedbackCard.style.display = 'block';
-            feedbackCard.style.background = 'rgba(239, 68, 68, 0.2)';
-            feedbackMsg.innerText = "ARTICLE INCORRECT ❌";
+            feedbackCard.style.background = 'rgba(239, 68, 68, 0.4)';
+            feedbackCard.style.border = '2px solid #ef4444';
+            feedbackMsg.innerHTML = "<span style='font-size: 1.8rem; font-weight: 900;'>❌ ERREUR ARTICLE</span><br><small>Ce n'est pas le bon produit !</small>";
+            
             setTimeout(() => {
                 flashOverlay.classList.remove('flash-active');
                 flashOverlay.style.background = 'white';
                 feedbackCard.style.display = 'none';
-            }, 1000);
+            }, 2000);
         }
 
         function triggerSuccess(msg) {
