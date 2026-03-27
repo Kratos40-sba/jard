@@ -159,7 +159,7 @@ async fn get_qrcode(State(state): State<SharedState>) -> Json<serde_json::Value>
     let my_local_ip = local_ip_address::local_ip()
         .unwrap_or(std::net::IpAddr::V4(std::net::Ipv4Addr::new(127, 0, 0, 1)));
     let url = format!(
-        "http://{}:8080/scanner?token={}",
+        "https://{}:8080/scanner?token={}",
         my_local_ip, state.access_token
     );
     Json(serde_json::json!({ "url": url, "token": state.access_token }))

@@ -183,7 +183,7 @@ async function getIP() {
 
 async function renderQRCode() {
     const ip = await getIP();
-    const url = `http://${ip}:8080/scanner?token=${token}`;
+    const url = `https://${ip}:8080/scanner?token=${token}`;
     
     // Clear container
     const container = document.getElementById('qrcode-container');
