@@ -12,21 +12,36 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ScanRecord {
-    pub count: u32,
-    pub last_worker: String,
-    pub is_anomaly: bool,
-    pub anomaly_reason: Option<String>,
+pub struct OrderItem {
+    pub barcode: String,
+    pub name: String,
+    pub target_qty: u32,
+    pub packed_qty: u32,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Order {
+    pub id: String,
+    pub items: Vec<OrderItem>,
+    pub status: String, // "Active", "Complete"
+}
+
+#[derive(Debug, Deserialize)]
+pub struct OrderRequest {
+    pub id: String,
+    pub items: Vec<(String, String, u32)>, // (barcode, name, qty)
 }
 
 #[derive(Debug, Deserialize)]
 pub struct ScanRequest {
     pub barcode: String,
     pub worker: String,
+    pub order_id: Option<String>,
 }
 
 pub struct AppState {
     pub scans: DashMap<String, ScanRecord>,
+    pub orders: DashMap<String, Order>,
     pub product_lookup: DashMap<String, String>,
     pub access_token: String,
     pub rate_limiter: DashMap<std::net::IpAddr, (chrono::DateTime<chrono::Utc>, u32)>,
@@ -40,6 +55,8 @@ pub fn router(state: SharedState) -> Router {
         .route("/qrcode", get(get_qrcode))
         .route("/scan", post(receive_scan))
         .route("/scans", get(list_scans))
+        .route("/orders", get(list_orders))
+        .route("/orders", post(create_order))
         .route("/scan/:barcode", delete(delete_scan))
         .route("/products", post(update_products))
         .route("/export", get(export_excel))
@@ -168,42 +185,73 @@ async fn get_qrcode(State(state): State<SharedState>) -> Json<serde_json::Value>
 async fn receive_scan(
     State(state): State<SharedState>,
     Json(payload): Json<ScanRequest>,
-) -> StatusCode {
-    // 1. Input Validation
-    if payload.barcode.len() > 64 || payload.worker.len() > 64 {
-        return StatusCode::BAD_REQUEST;
-    }
-    if !payload
-        .barcode
-        .chars()
-        .all(|c| c.is_alphanumeric() || c == '-')
-    {
-        return StatusCode::BAD_REQUEST;
+) -> (StatusCode, Json<serde_json::Value>) {
+    // 1. Order Verification Mode (RAF Core)
+    if let Some(order_id) = payload.order_id {
+        if let Some(mut order) = state.orders.get_mut(&order_id) {
+            let mut found = false;
+            let mut over_packed = false;
+            let mut item_name = "Inconnu".to_string();
+
+            for item in order.items.iter_mut() {
+                if item.barcode == payload.barcode {
+                    item_name = item.name.clone();
+                    if item.packed_qty < item.target_qty {
+                        item.packed_qty += 1;
+                        found = true;
+                    } else {
+                        over_packed = true;
+                    }
+                    break;
+                }
+            }
+
+            if found {
+                return (StatusCode::OK, Json(serde_json::json!({ "status": "ok", "message": format!("Correct: {}", item_name) })));
+            } else if over_packed {
+                return (StatusCode::BAD_REQUEST, Json(serde_json::json!({ "status": "error", "message": "Déjà complet!" })));
+            } else {
+                return (StatusCode::BAD_REQUEST, Json(serde_json::json!({ "status": "error", "message": "ARTICLE INCORRECT" })));
+            }
+        }
     }
 
-    // 2. Anomaly Detection Logic
+    // 2. Simple Inventory Fallback (Legacy Jard)
     let is_unknown = !state.product_lookup.contains_key(&payload.barcode);
-    
-    // 3. Process Scan
-    state
-        .scans
-        .entry(payload.barcode)
-        .and_modify(|r| {
-            r.count += 1;
-            r.last_worker = payload.worker.clone();
-            // Flag quantity spikes
-            if r.count > 50 {
-                r.is_anomaly = true;
-                r.anomaly_reason = Some("Volume Suspect".to_string());
-            }
-        })
-        .or_insert(ScanRecord {
-            count: 1,
-            last_worker: payload.worker,
-            is_anomaly: is_unknown,
-            anomaly_reason: if is_unknown { Some("Inconnu".to_string()) } else { None },
-        });
-    StatusCode::OK
+    state.scans.entry(payload.barcode.clone()).and_modify(|r| {
+        r.count += 1;
+        r.last_worker = payload.worker.clone();
+    }).or_insert(ScanRecord {
+        count: 1,
+        last_worker: payload.worker,
+        is_anomaly: is_unknown,
+        anomaly_reason: if is_unknown { Some("Inconnu".to_string()) } else { None },
+    });
+
+    (StatusCode::OK, Json(serde_json::json!({ "status": "ok", "message": "Scanné" })))
+}
+
+async fn create_order(
+    State(state): State<SharedState>,
+    Json(payload): Json<OrderRequest>,
+) -> StatusCode {
+    let order = Order {
+        id: payload.id.clone(),
+        status: "Active".to_string(),
+        items: payload.items.into_iter().map(|(barcode, name, qty)| OrderItem {
+            barcode,
+            name,
+            target_qty: qty,
+            packed_qty: 0,
+        }).collect(),
+    };
+    state.orders.insert(payload.id, order);
+    StatusCode::CREATED
+}
+
+async fn list_orders(State(state): State<SharedState>) -> Json<Vec<Order>> {
+    let orders: Vec<Order> = state.orders.iter().map(|e| e.value().clone()).collect();
+    Json(orders)
 }
 
 #[derive(Debug, Deserialize)]
